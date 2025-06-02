@@ -149,7 +149,7 @@
             name: `${templateParams.last_name} ${templateParams.first_name}`
           };
 
-          fetch('https://script.google.com/macros/s/AKfycbw3oavYYe8ecKKygQPmW1Vcc5s-KFGta_TwSIRFcTT3cJTt71TRlnmYHh6pBcLmm2Ib6w/exec', {
+          fetch('https://script.google.com/macros/s/AKfycbzT_dV5SgcfX9SsrueqRMYqKWajDVo5HVaBI8fZOWaPcKb3TuqL89XptJML4iKaCRU6iw/exec', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -303,7 +303,7 @@
 
     async function fetchAvailableSlots() {
       try {
-        const res = await fetch("https://script.google.com/macros/s/AKfycbw3oavYYe8ecKKygQPmW1Vcc5s-KFGta_TwSIRFcTT3cJTt71TRlnmYHh6pBcLmm2Ib6w/exec");
+        const res = await fetch("https://script.google.com/macros/s/AKfycbzT_dV5SgcfX9SsrueqRMYqKWajDVo5HVaBI8fZOWaPcKb3TuqL89XptJML4iKaCRU6iw/exec");
         const data = await res.json();
 
         const slotMap = {};
