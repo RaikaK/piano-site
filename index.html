@@ -143,36 +143,35 @@
       emailjs.send("service_clw93ld", "template_inu6cqd", templateParams)
         .then(() => {
           // スプレッドシート側にもPOST送信
-          const postData = {
-            date: selectedDateTimeText.split(' ')[0],
-            time: selectedDateTimeText.split(' ')[1],
-            name: `${templateParams.last_name} ${templateParams.first_name}`
-          };
-
-          fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            mode: 'cors', 
-            body: JSON.stringify(postData)
-          })
-          .then(res => res.text())
-          .then(result => {
-            console.log("予約登録:", result);
-            alert(`${templateParams.last_name} ${templateParams.first_name} 様、ご予約ありがとうございます。確認メールを送信しました。`);
-            form.reset();
-            document.getElementById('bookingFormContainer').style.display = 'none';
-            fetchAvailableSlots(); // 予約確定後にカレンダー再描画
-          })
-          .catch(err => {
-            console.error("予約登録失敗:", err);
-            alert('予約の登録に失敗しました。再度お試しください。');
-          });
-        })
-        .catch((err) => {
-          console.error('メール送信失敗:', err);
-          alert('メール送信に失敗しました。再度お試しください。');
+      const postData = {
+        datetime: document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', ''),
+        lastName: document.getElementById('lastName').value,
+        firstName: document.getElementById('firstName').value,
+        kanaLast: document.getElementById('kanaLast').value,
+        kanaFirst: document.getElementById('kanaFirst').value,
+        age: document.getElementById('age').selectedOptions[0].text,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        course: document.getElementById('course').selectedOptions[0].text,
+        experience: document.getElementById('experience').selectedOptions[0].text,
+        message: document.getElementById('message').value
+      };
+      
+      fetch('https://script.google.com/macros/s/＜デプロイID＞/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
+        body: JSON.stringify(postData)
+      })
+      .then(res => res.json())
+      .then(json => {
+        if (json.result === 'OK') {
+          alert('予約が完了しました！');
+        } else {
+          alert('予約に失敗しました。');
+        }
+      })
+      .catch(err => console.error(err));
         });
     });
   });
