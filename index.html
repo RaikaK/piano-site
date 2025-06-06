@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>プチピアノ館</title>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <style>
@@ -110,72 +110,173 @@
       cursor: pointer;
     }
   </style>
+
   <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    emailjs.init("29w7XYlgQyq-1jroE"); // EmailJSのユーザーID
+    document.addEventListener('DOMContentLoaded', function () {
+      emailjs.init("29w7XYlgQyq-1jroE"); // EmailJSのユーザーID
 
-    const form = document.getElementById('bookingForm');
+      const form = document.getElementById('bookingForm');
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-      const selectedDateTimeText = document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', '');
-      const courseText = document.getElementById('course').selectedOptions[0]?.text || '';
-      const ageText = document.getElementById('age').selectedOptions[0]?.text || '';
-      const experienceText = document.getElementById('experience').selectedOptions[0]?.text || '';
+        const selectedDateTimeText = document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', '');
+        const courseText = document.getElementById('course').selectedOptions[0]?.text || '';
+        const ageText = document.getElementById('age').selectedOptions[0]?.text || '';
+        const experienceText = document.getElementById('experience').selectedOptions[0]?.text || '';
 
-      const templateParams = {
-        last_name: document.getElementById('lastName').value,
-        first_name: document.getElementById('firstName').value,
-        kana_last: document.getElementById('kanaLast').value,
-        kana_first: document.getElementById('kanaFirst').value,
-        age: ageText,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        experience: experienceText,
-        message: document.getElementById('message').value,
-        datetime: selectedDateTimeText,
-        course: courseText
-      };
+        const templateParams = {
+          last_name: document.getElementById('lastName').value,
+          first_name: document.getElementById('firstName').value,
+          kana_last: document.getElementById('kanaLast').value,
+          kana_first: document.getElementById('kanaFirst').value,
+          age: ageText,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value,
+          experience: experienceText,
+          message: document.getElementById('message').value,
+          datetime: selectedDateTimeText,
+          course: courseText
+        };
 
-      // EmailJS 2通送信
-      emailjs.send("service_clw93ld", "template_81vqf1j", templateParams);
-      emailjs.send("service_clw93ld", "template_inu6cqd", templateParams)
-        .then(() => {
-          // スプレッドシート側にもPOST送信
-      const postData = {
-        datetime: document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', ''),
-        lastName: document.getElementById('lastName').value,
-        firstName: document.getElementById('firstName').value,
-        kanaLast: document.getElementById('kanaLast').value,
-        kanaFirst: document.getElementById('kanaFirst').value,
-        age: document.getElementById('age').selectedOptions[0].text,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        course: document.getElementById('course').selectedOptions[0].text,
-        experience: document.getElementById('experience').selectedOptions[0].text,
-        message: document.getElementById('message').value
-      };
-      
-      fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors',
-        body: JSON.stringify(postData)
-      })
-      .then(res => res.json())
-      .then(json => {
-        if (json.result === 'OK') {
-          alert('予約が完了しました！');
-        } else {
-          alert('予約に失敗しました。');
-        }
-      })
-      .catch(err => console.error(err));
-        });
+        // EmailJS 2通送信
+        emailjs.send("service_clw93ld", "template_81vqf1j", templateParams);
+        emailjs.send("service_clw93ld", "template_inu6cqd", templateParams)
+          .then(() => {
+            // スプレッドシート側にもPOST送信
+            const postData = {
+              datetime: document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', ''),
+              lastName: document.getElementById('lastName').value,
+              firstName: document.getElementById('firstName').value,
+              kanaLast: document.getElementById('kanaLast').value,
+              kanaFirst: document.getElementById('kanaFirst').value,
+              age: document.getElementById('age').selectedOptions[0].text,
+              email: document.getElementById('email').value,
+              phone: document.getElementById('phone').value,
+              course: document.getElementById('course').selectedOptions[0].text,
+              experience: document.getElementById('experience').selectedOptions[0].text,
+              message: document.getElementById('message').value
+            };
+
+            fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              mode: 'cors',
+              body: JSON.stringify(postData)
+            })
+            .then(res => res.json())
+            .then(json => {
+              if (json.result === 'OK') {
+                alert('予約が完了しました！');
+                form.reset();
+                document.getElementById('bookingFormContainer').style.display = 'none';
+                // 予約確定後、再度空き枠を取得してカレンダーを更新
+                loadAvailableSlotsJSONP();
+              } else {
+                alert('予約に失敗しました。');
+              }
+            })
+            .catch(err => console.error(err));
+          });
+      });
+
+      // 初回ロード時に JSONP で空き枠を取得
+      loadAvailableSlotsJSONP();
     });
-  });
-</script>
+
+    // JSONP で空き枠を取得し、handleAvailableSlotsを呼び出す
+    function loadAvailableSlotsJSONP() {
+      // 既存の <script> タグを削除してから挿入する（複数回呼ばれる際の重複防止）
+      const existing = document.getElementById('jsonpSlots');
+      if (existing) {
+        existing.remove();
+      }
+      const script = document.createElement('script');
+      script.id = 'jsonpSlots';
+      script.src = 'https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec?callback=handleAvailableSlots';
+      document.body.appendChild(script);
+    }
+
+    // JSONP のコールバック関数：受け取った data でカレンダーを描画する
+    function handleAvailableSlots(data) {
+      // data は [{date:"2025-06-10", time:"10:00"}, …] の形
+      const slotMap = {};
+      data.forEach(slot => {
+        if (!slotMap[slot.date]) slotMap[slot.date] = [];
+        slotMap[slot.date].push(slot.time);
+      });
+      renderCalendar(slotMap);
+    }
+
+    // カレンダー描画用の関数
+    const calendar = document.getElementById('calendar');
+    const bookingFormContainer = document.getElementById('bookingFormContainer');
+    const selectedDateTime = document.getElementById('selectedDateTime');
+    const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+    let startDate = new Date();
+
+    function renderCalendar(slotMap) {
+      calendar.innerHTML = '';
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // startDate を基準に、その週の月曜日を取得
+      const monday = new Date(startDate);
+      const dayOfWeek = monday.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      monday.setDate(monday.getDate() + diffToMonday);
+
+      for (let i = 0; i < 6; i++) { // 月〜土（6日分）
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        date.setHours(0, 0, 0, 0);
+
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${d}`;
+        const weekdayStr = WEEKDAYS[date.getDay()];
+
+        const dayElem = document.createElement('div');
+        dayElem.className = 'day';
+        dayElem.innerHTML = `<strong>${y}年${m}月${d}日 (${weekdayStr})</strong>`;
+
+        const slots = slotMap[dateStr] || [];
+
+        slots.forEach(time => {
+          const slot = document.createElement('div');
+          slot.className = 'time-slot';
+
+          // 当日または過去はボタンを表示しない（枠は残す）
+          if (date > today) {
+            const btn = document.createElement('button');
+            btn.textContent = time;
+            btn.onclick = () => {
+              bookingFormContainer.style.display = 'block';
+              selectedDateTime.textContent = `選択された日時: ${dateStr} ${time}`;
+            };
+            slot.appendChild(btn);
+          }
+
+          dayElem.appendChild(slot);
+        });
+
+        calendar.appendChild(dayElem);
+      }
+    }
+
+    // カレンダー操作：前の週, 次の週
+    function beforeWeek() {
+      startDate.setDate(startDate.getDate() - 7);
+      loadAvailableSlotsJSONP();
+    }
+
+    function nextWeek() {
+      startDate.setDate(startDate.getDate() + 7);
+      loadAvailableSlotsJSONP();
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -199,12 +300,10 @@
     <section>
       <h2>カレンダー予約</h2>
       <p>以下の空き時間からご希望の時間を選んで予約が可能です。</p>
-      <div class="calendar-controls">        
+      <div class="calendar-controls">
         <button onclick="beforeWeek()">前の週</button>
         <button onclick="nextWeek()">次の週</button>
-        <button onclick="nextMonth()">次の月</button>
-        <!--<input type="date" id="datePicker" style="width: auto;">
-        <button onclick="jumpToDate()">日付へ</button>-->
+        <button onclick="loadAvailableSlotsJSONP()">今週の空き枠</button>
       </div>
       <div class="calendar" id="calendar"></div>
     </section>
@@ -212,7 +311,7 @@
     <div id="bookingFormContainer">
       <h2>レッスン予約フォーム</h2>
       <form id="bookingForm">
-<p style="color: #b00; font-weight: bold;">※レッスンを受ける方のお名前を記入してください。中学生以下の方は保護者の連絡先（メール・電話番号）をご記入ください。</p>
+        <p style="color: #b00; font-weight: bold;">※レッスンを受ける方のお名前を記入してください。中学生以下の方は保護者の連絡先（メール・電話番号）をご記入ください。</p>
         <p id="selectedDateTime"></p>
         <div class="form-row">
           <div class="form-group">
@@ -225,32 +324,32 @@
           </div>
         </div>
         <div class="form-row">
-  <div class="form-group">
-    <label for="kanaLast">お名前（ひらがな・姓）</label>
-<input type="text" id="kanaLast" required>
-</div>
-<div class="form-group">
-<label for="kanaFirst">お名前（ひらがな・名）</label>
-<input type="text" id="kanaFirst" required>
-  </div>
-  <div class="form-group">
-    <label for="age">年齢</label>
-    <select id="age" required>
-      <option value="">選択してください</option>
-      <option value="nursery">保育園生</option>
-      <option value="kindergarten">幼稚園生</option>
-      <option value="elementary">小学生低学年</option>
-      <option value="elementary">小学生中学年</option>
-      <option value="elementary">小学生高学年</option>
-      <option value="junior">中学生</option>
-      <option value="high">高校生</option>
-      <option value="adult">大学生以上・社会人</option>
-    </select>
-  </div>
-</div>
-<div class="form-row">
-  <div class="form-group">
-    <label for="email">メールアドレス</label>
+          <div class="form-group">
+            <label for="kanaLast">お名前（ひらがな・姓）</label>
+            <input type="text" id="kanaLast" required>
+          </div>
+          <div class="form-group">
+            <label for="kanaFirst">お名前（ひらがな・名）</label>
+            <input type="text" id="kanaFirst" required>
+          </div>
+          <div class="form-group">
+            <label for="age">年齢</label>
+            <select id="age" required>
+              <option value="">選択してください</option>
+              <option value="nursery">保育園生</option>
+              <option value="kindergarten">幼稚園生</option>
+              <option value="elementary">小学生低学年</option>
+              <option value="elementary">小学生中学年</option>
+              <option value="elementary">小学生高学年</option>
+              <option value="junior">中学生</option>
+              <option value="high">高校生</option>
+              <option value="adult">大学生以上・社会人</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">メールアドレス</label>
             <input type="email" id="email" required>
           </div>
           <div class="form-group">
@@ -293,101 +392,5 @@
       <p><strong>電話：</strong> 098-963-6112（受付時間：平日 9:00〜20:00 土日祝 9:00〜17:00）</p>
     </section>
   </main>
-
-  <script>
-    const calendar = document.getElementById('calendar');
-    const bookingFormContainer = document.getElementById('bookingFormContainer');
-    const selectedDateTime = document.getElementById('selectedDateTime');
-    const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
-    let startDate = new Date();
-
-    async function fetchAvailableSlots() {
-      try {
-        const res = await fetch("https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec");
-        const data = await res.json();
-
-        const slotMap = {};
-        data.forEach(slot => {
-          if (!slotMap[slot.date]) slotMap[slot.date] = [];
-          slotMap[slot.date].push(slot.time);
-        });
-
-        renderCalendar(slotMap);
-      } catch (err) {
-        console.error("空き枠取得エラー:", err);
-      }
-    }
-
-    function renderCalendar(slotMap) {
-      calendar.innerHTML = '';
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // ▼ startDate を基準に、その週の月曜日を取得
-      const monday = new Date(startDate);
-      const day = monday.getDay();
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      monday.setDate(monday.getDate() + diffToMonday);
-
-      for (let i = 0; i < 6; i++) { // 月〜土（6日分）
-        const date = new Date(monday);
-        date.setDate(monday.getDate() + i);
-        date.setHours(0, 0, 0, 0);
-
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${y}-${m}-${d}`;
-        const weekdayStr = WEEKDAYS[date.getDay()];
-
-        const dayElem = document.createElement('div');
-        dayElem.className = 'day';
-        dayElem.innerHTML = `<strong>${y}年${m}月${d}日 (${weekdayStr})</strong>`;
-
-        const slots = slotMap[dateStr] || [];
-
-        slots.forEach(time => {
-          const slot = document.createElement('div');
-          slot.className = 'time-slot';
-
-          // ▼ 当日または過去はボタンを表示しない（枠は残す）
-          if (date > today) {  //もし当日も入れたいなら if (date.getTime() !== today.getTime()) { に変更する
-            const btn = document.createElement('button');
-            btn.textContent = time;
-            btn.onclick = () => {
-              bookingFormContainer.style.display = 'block';
-              selectedDateTime.textContent = `選択された日時: ${dateStr} ${time}`;
-            };
-            slot.appendChild(btn);
-          }
-
-          dayElem.appendChild(slot);
-        });
-
-        calendar.appendChild(dayElem);
-      }
-    }
-
-    function beforeWeek() {
-      startDate.setDate(startDate.getDate() - 7);
-      fetchAvailableSlots();
-    }
-
-    function nextWeek() {
-      startDate.setDate(startDate.getDate() + 7);
-      fetchAvailableSlots();
-    }
-
-    /*function jumpToDate() {
-      const selected = new Date(document.getElementById('datePicker').value);
-      if (!isNaN(selected)) {
-        startDate = selected;
-        fetchAvailableSlots();
-      }
-    }*/
-
-    fetchAvailableSlots();
-  </script>
 </body>
 </html>
