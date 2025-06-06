@@ -143,40 +143,36 @@
         emailjs.send("service_clw93ld", "template_81vqf1j", templateParams);
         emailjs.send("service_clw93ld", "template_inu6cqd", templateParams)
           .then(() => {
-            // スプレッドシート側にもPOST送信
-            const postData = {
-              datetime: document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', ''),
-              lastName: document.getElementById('lastName').value,
-              firstName: document.getElementById('firstName').value,
-              kanaLast: document.getElementById('kanaLast').value,
-              kanaFirst: document.getElementById('kanaFirst').value,
-              age: document.getElementById('age').selectedOptions[0].text,
-              email: document.getElementById('email').value,
-              phone: document.getElementById('phone').value,
-              course: document.getElementById('course').selectedOptions[0].text,
-              experience: document.getElementById('experience').selectedOptions[0].text,
-              message: document.getElementById('message').value
-            };
+      // FormDataオブジェクトを作成
+      const formData = new FormData();
+      formData.append('datetime', document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', ''));
+      formData.append('lastName', document.getElementById('lastName').value);
+      formData.append('firstName', document.getElementById('firstName').value);
+      formData.append('kanaLast', document.getElementById('kanaLast').value);
+      formData.append('kanaFirst', document.getElementById('kanaFirst').value);
+      formData.append('age', document.getElementById('age').selectedOptions[0].text);
+      formData.append('email', document.getElementById('email').value);
+      formData.append('phone', document.getElementById('phone').value);
+      formData.append('course', document.getElementById('course').selectedOptions[0].text);
+      formData.append('experience', document.getElementById('experience').selectedOptions[0].text);
+      formData.append('message', document.getElementById('message').value);
 
-            fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              mode: 'cors',
-              body: JSON.stringify(postData)
-            })
-            .then(res => res.json())
-            .then(json => {
-              if (json.result === 'OK') {
-                alert('予約が完了しました！');
-                form.reset();
-                document.getElementById('bookingFormContainer').style.display = 'none';
-                // 予約確定後、再度空き枠を取得してカレンダーを更新
-                loadAvailableSlotsJSONP();
-              } else {
-                alert('予約に失敗しました。');
-              }
-            })
-            .catch(err => console.error(err));
+      fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
+        method: 'POST',
+        body: formData, // JSON.stringifyではなく、formDataを直接渡す
+        // headersとmodeは不要になるので削除
+      })
+      .then(response => {
+        // fetchが成功した時点でアラートを表示（レスポンスを待たない）
+        alert('予約が完了しました！');
+        form.reset();
+        document.getElementById('bookingFormContainer').style.display = 'none';
+        loadAvailableSlotsJSONP();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('予約の送信に失敗しました。');
+      });
           });
       });
 
