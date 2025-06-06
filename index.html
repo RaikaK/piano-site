@@ -110,169 +110,184 @@
       cursor: pointer;
     }
   </style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // --- グローバル変数とDOM要素の取得 ---
+  // HTMLの読み込み完了後に要素を取得するように、この位置に移動しました
+  const calendar = document.getElementById('calendar');
+  const bookingFormContainer = document.getElementById('bookingFormContainer');
+  const selectedDateTime = document.getElementById('selectedDateTime');
+  const form = document.getElementById('bookingForm');
+  const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+  let startDate = new Date();
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      emailjs.init("29w7XYlgQyq-1jroE"); // EmailJSのユーザーID
+  // --- EmailJSの初期化 ---
+  emailjs.init("29w7XYlgQyq-1jroE"); // EmailJSのユーザーID
 
-      const form = document.getElementById('bookingForm');
+  // --- イベントリスナー ---
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
 
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
+    const selectedDateTimeText = document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', '');
+    const courseText = document.getElementById('course').selectedOptions[0]?.text || '';
+    const ageText = document.getElementById('age').selectedOptions[0]?.text || '';
+    const experienceText = document.getElementById('experience').selectedOptions[0]?.text || '';
 
-        const selectedDateTimeText = document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', '');
-        const courseText = document.getElementById('course').selectedOptions[0]?.text || '';
-        const ageText = document.getElementById('age').selectedOptions[0]?.text || '';
-        const experienceText = document.getElementById('experience').selectedOptions[0]?.text || '';
+    const templateParams = {
+      last_name: document.getElementById('lastName').value,
+      first_name: document.getElementById('firstName').value,
+      kana_last: document.getElementById('kanaLast').value,
+      kana_first: document.getElementById('kanaFirst').value,
+      age: ageText,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      experience: experienceText,
+      message: document.getElementById('message').value,
+      datetime: selectedDateTimeText,
+      course: courseText
+    };
 
-        const templateParams = {
-          last_name: document.getElementById('lastName').value,
-          first_name: document.getElementById('firstName').value,
-          kana_last: document.getElementById('kanaLast').value,
-          kana_first: document.getElementById('kanaFirst').value,
-          age: ageText,
-          email: document.getElementById('email').value,
-          phone: document.getElementById('phone').value,
-          experience: experienceText,
-          message: document.getElementById('message').value,
-          datetime: selectedDateTimeText,
-          course: courseText
-        };
+    // EmailJS 2通送信
+    emailjs.send("service_clw93ld", "template_81vqf1j", templateParams);
+    emailjs.send("service_clw93ld", "template_inu6cqd", templateParams)
+      .then(() => {
+        // スプレッドシート側にもPOST送信
+        const formData = new FormData();
+        formData.append('datetime', selectedDateTimeText);
+        formData.append('lastName', document.getElementById('lastName').value);
+        formData.append('firstName', document.getElementById('firstName').value);
+        formData.append('kanaLast', document.getElementById('kanaLast').value);
+        formData.append('kanaFirst', document.getElementById('kanaFirst').value);
+        formData.append('age', ageText);
+        formData.append('email', document.getElementById('email').value);
+        formData.append('phone', document.getElementById('phone').value);
+        formData.append('course', courseText);
+        formData.append('experience', experienceText);
+        formData.append('message', document.getElementById('message').value);
 
-        // EmailJS 2通送信
-        emailjs.send("service_clw93ld", "template_81vqf1j", templateParams);
-        emailjs.send("service_clw93ld", "template_inu6cqd", templateParams)
-          .then(() => {
-      // FormDataオブジェクトを作成
-      const formData = new FormData();
-      formData.append('datetime', document.getElementById('selectedDateTime').textContent.replace('選択された日時: ', ''));
-      formData.append('lastName', document.getElementById('lastName').value);
-      formData.append('firstName', document.getElementById('firstName').value);
-      formData.append('kanaLast', document.getElementById('kanaLast').value);
-      formData.append('kanaFirst', document.getElementById('kanaFirst').value);
-      formData.append('age', document.getElementById('age').selectedOptions[0].text);
-      formData.append('email', document.getElementById('email').value);
-      formData.append('phone', document.getElementById('phone').value);
-      formData.append('course', document.getElementById('course').selectedOptions[0].text);
-      formData.append('experience', document.getElementById('experience').selectedOptions[0].text);
-      formData.append('message', document.getElementById('message').value);
-
-      fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
-        method: 'POST',
-        body: formData, // JSON.stringifyではなく、formDataを直接渡す
-        // headersとmodeは不要になるので削除
-      })
-      .then(response => {
-        // fetchが成功した時点でアラートを表示（レスポンスを待たない）
-        alert('予約が完了しました！');
-        form.reset();
-        document.getElementById('bookingFormContainer').style.display = 'none';
-        loadAvailableSlotsJSONP();
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('予約の送信に失敗しました。');
-      });
-          });
-      });
-
-      // 初回ロード時に JSONP で空き枠を取得
-      loadAvailableSlotsJSONP();
-    });
-
-    // JSONP で空き枠を取得し、handleAvailableSlotsを呼び出す
-    function loadAvailableSlotsJSONP() {
-      // 既存の <script> タグを削除してから挿入する（複数回呼ばれる際の重複防止）
-      const existing = document.getElementById('jsonpSlots');
-      if (existing) {
-        existing.remove();
-      }
-      const script = document.createElement('script');
-      script.id = 'jsonpSlots';
-      script.src = 'https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec?callback=handleAvailableSlots';
-      document.body.appendChild(script);
-    }
-
-    // JSONP のコールバック関数：受け取った data でカレンダーを描画する
-    function handleAvailableSlots(data) {
-      // data は [{date:"2025-06-10", time:"10:00"}, …] の形
-      const slotMap = {};
-      data.forEach(slot => {
-        if (!slotMap[slot.date]) slotMap[slot.date] = [];
-        slotMap[slot.date].push(slot.time);
-      });
-      renderCalendar(slotMap);
-    }
-
-    // カレンダー描画用の関数
-    const calendar = document.getElementById('calendar');
-    const bookingFormContainer = document.getElementById('bookingFormContainer');
-    const selectedDateTime = document.getElementById('selectedDateTime');
-    const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
-    let startDate = new Date();
-
-    function renderCalendar(slotMap) {
-      calendar.innerHTML = '';
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // startDate を基準に、その週の月曜日を取得
-      const monday = new Date(startDate);
-      const dayOfWeek = monday.getDay();
-      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      monday.setDate(monday.getDate() + diffToMonday);
-
-      for (let i = 0; i < 6; i++) { // 月〜土（6日分）
-        const date = new Date(monday);
-        date.setDate(monday.getDate() + i);
-        date.setHours(0, 0, 0, 0);
-
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${y}-${m}-${d}`;
-        const weekdayStr = WEEKDAYS[date.getDay()];
-
-        const dayElem = document.createElement('div');
-        dayElem.className = 'day';
-        dayElem.innerHTML = `<strong>${y}年${m}月${d}日 (${weekdayStr})</strong>`;
-
-        const slots = slotMap[dateStr] || [];
-
-        slots.forEach(time => {
-          const slot = document.createElement('div');
-          slot.className = 'time-slot';
-
-          // 当日または過去はボタンを表示しない（枠は残す）
-          if (date > today) {
-            const btn = document.createElement('button');
-            btn.textContent = time;
-            btn.onclick = () => {
-              bookingFormContainer.style.display = 'block';
-              selectedDateTime.textContent = `選択された日時: ${dateStr} ${time}`;
-            };
-            slot.appendChild(btn);
-          }
-
-          dayElem.appendChild(slot);
+        fetch('https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec', {
+          method: 'POST',
+          body: formData,
+        })
+        .then(response => {
+          alert('予約が完了しました！');
+          form.reset();
+          bookingFormContainer.style.display = 'none';
+          loadAvailableSlotsJSONP(); // 予約後にカレンダーを再読み込み
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('予約の送信に失敗しました。');
         });
+      }, (error) => {
+         alert('メールの送信に失敗しました: ' + JSON.stringify(error));
+      });
+  });
 
-        calendar.appendChild(dayElem);
+  // --- 関数定義 ---
+
+  // JSONP で空き枠を取得し、handleAvailableSlotsを呼び出す
+  function loadAvailableSlotsJSONP() {
+    const existing = document.getElementById('jsonpSlots');
+    if (existing) {
+      existing.remove();
+    }
+    const script = document.createElement('script');
+    script.id = 'jsonpSlots';
+    script.src = 'https://script.google.com/macros/s/AKfycbxEc2SNBKjBd6yxeP28H0dsyyAZ-Vbi-4MwPFvpIhDu04BHwxcCWXM_aOqZAYGQgxSd3w/exec?callback=handleAvailableSlots';
+    document.body.appendChild(script);
+  }
+
+  // JSONP のコールバック関数：受け取った data でカレンダーを描画する
+  // windowオブジェクトに登録して、JSONPからグローバルに呼び出せるようにする
+  window.handleAvailableSlots = function(data) {
+    const slotMap = {};
+    data.forEach(slot => {
+      if (!slotMap[slot.date]) slotMap[slot.date] = [];
+      slotMap[slot.date].push(slot.time);
+    });
+    renderCalendar(slotMap);
+  }
+
+  // カレンダー描画用の関数
+  function renderCalendar(slotMap) {
+    if (!calendar) return; // calendar要素がなければ何もしない
+    calendar.innerHTML = '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const monday = new Date(startDate);
+    const dayOfWeek = monday.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    monday.setDate(monday.getDate() + diffToMonday);
+
+    for (let i = 0; i < 6; i++) { // 月〜土（6日分）
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      date.setHours(0, 0, 0, 0);
+
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+      const weekdayStr = WEEKDAYS[date.getDay()];
+
+      const dayElem = document.createElement('div');
+      dayElem.className = 'day';
+      dayElem.innerHTML = `<strong>${y}年${m}月${d}日 (${weekdayStr})</strong>`;
+
+      const slots = slotMap[dateStr] || [];
+
+      if (slots.length > 0) {
+        slots.forEach(time => {
+            const slot = document.createElement('div');
+            slot.className = 'time-slot';
+            if (date > today) {
+                const btn = document.createElement('button');
+                btn.textContent = time;
+                btn.onclick = () => {
+                    bookingFormContainer.style.display = 'block';
+                    selectedDateTime.textContent = `選択された日時: ${dateStr} ${time}`;
+                    bookingFormContainer.scrollIntoView({ behavior: 'smooth' });
+                };
+                slot.appendChild(btn);
+            }
+            dayElem.appendChild(slot);
+        });
+      } else {
+         const noSlot = document.createElement('div');
+         noSlot.className = 'time-slot';
+         noSlot.textContent = '空きなし';
+         dayElem.appendChild(noSlot);
       }
+      calendar.appendChild(dayElem);
     }
+  }
 
-    // カレンダー操作：前の週, 次の週
-    function beforeWeek() {
-      startDate.setDate(startDate.getDate() - 7);
-      loadAvailableSlotsJSONP();
-    }
+  // カレンダー操作：前の週, 次の週
+  // windowオブジェクトに登録して、HTMLのonclickから呼び出せるようにする
+  window.beforeWeek = function() {
+    startDate.setDate(startDate.getDate() - 7);
+    loadAvailableSlotsJSONP();
+  }
 
-    function nextWeek() {
-      startDate.setDate(startDate.getDate() + 7);
+  window.nextWeek = function() {
+    startDate.setDate(startDate.getDate() + 7);
+    loadAvailableSlotsJSONP();
+  }
+
+  window.loadSlots = function() {
+      startDate = new Date();
       loadAvailableSlotsJSONP();
-    }
-  </script>
+  }
+
+  // --- 初期化処理 ---
+  // 最初にカレンダーを読み込む
+  loadAvailableSlotsJSONP();
+});
+</script>
+
 </head>
 <body>
   <header>
